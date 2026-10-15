@@ -481,6 +481,11 @@ const expand = (input: Record<string, any> | null | undefined) => {
 }
 
 function decompressRequestBody(buffer: ArrayBuffer, contentEncoding: string) {
+  // An empty body has no content to decode, and decoding it would throw (e.g. gzip "unexpected end of file").
+  if (buffer.byteLength === 0) {
+    return buffer
+  }
+
   const encodings = contentEncoding
     .toLowerCase()
     .split(',')

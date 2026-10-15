@@ -85,3 +85,28 @@ it('should accept and decode deflate encoded application/json', done => {
   req.write(compressedMessage)
   req.end()
 })
+
+it('should not decode an empty body of a non-intercepted request when content-encoding is set', async () => {
+  const server = http.createServer((req, res) => {
+    req.resume()
+    req.on('end', () => res.end('ok'))
+  })
+  await new Promise(resolve => server.listen(0, resolve))
+  const origin = `http://localhost:${server.address().port}`
+
+  try {
+    const status = await new Promise((resolve, reject) => {
+      const req = http.request(origin, {
+        method: 'POST',
+        headers: { 'content-encoding': 'gzip' },
+      })
+      req.on('response', res => resolve(res.statusCode))
+      req.on('error', reject)
+      req.end()
+    })
+
+    expect(status).to.equal(200)
+  } finally {
+    server.close()
+  }
+})
